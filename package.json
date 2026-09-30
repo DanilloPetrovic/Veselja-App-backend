@@ -6,7 +6,9 @@
     "dev": "ts-node-dev src/index.ts",
     "prisma:migrate": "prisma migrate dev",
     "prisma:generate": "prisma generate",
-    "prisma:seed": "ts-node prisma/seed.ts"
+    "prisma:seed": "ts-node prisma/seed.ts",
+    "start": "node index.js",
+    "build": "npm install"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1143.0",
