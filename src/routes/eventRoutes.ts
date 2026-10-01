@@ -4,6 +4,7 @@ import {
   getEvents,
   getEventBySlug,
   updateEvent,
+  deleteEvent,
 } from "../controllers/eventController";
 import asyncHandler from "../middlewares/asyncHandler";
 import authMiddleware from "../middlewares/authMiddleware";
@@ -24,5 +25,6 @@ router.patch(
   asyncHandler(updateEvent),
 );
 router.get("/:slug", asyncHandler(getEventBySlug));
+router.delete("/:id", authMiddleware, asyncHandler(deleteEvent));
 
 export default router;

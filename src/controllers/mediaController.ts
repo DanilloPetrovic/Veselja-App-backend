@@ -29,6 +29,11 @@ export const uploadMedia = async (
       },
     });
 
+    const io = req.app.get("io");
+    if (io) {
+      io.to(eventId).emit("media_uploaded", media);
+    }
+
     return res.status(201).json({
       success: true,
       data: media,
@@ -70,6 +75,13 @@ export const uploadMultipleMedia = async (
 
     const mediaList = await Promise.all(uploadPromises);
 
+    const io = req.app.get("io");
+    if (io) {
+      mediaList.forEach((mediaItem) => {
+        io.to(eventId).emit("media_uploaded", mediaItem);
+      });
+    }
+
     return res.status(201).json({
       success: true,
       count: mediaList.length,
@@ -94,6 +106,80 @@ export const getEventMedia = async (
       success: true,
       data: media,
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteMedia = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { id } = req.params;
+
+    const guestSessionId =
+      (req.headers["x-guest-session-id"] as string) ||
+      req.body?.guestSessionId ||
+      (req.query?.guestSessionId as string);
+
+    const deletedMedia = await mediaService.deleteMedia(id, guestSessionId);
+
+    const io = req.app.get("io");
+
+    if (io && deletedMedia?.eventId) {
+      io.to(deletedMedia.eventId).emit("media_deleted", deletedMedia.id);
+    }
+
+    res.status(200).json({
+      message: "Fajl je uspešno obrisan.",
+      media: deletedMedia,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const downloadMedia = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const fileUrl = req.query.url as string;
+    const filename = req.query.filename as string;
+
+    const {
+      stream,
+      contentType,
+      filename: downloadName,
+    } = await mediaService.getMediaDownloadStream(fileUrl, filename);
+
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${encodeURIComponent(downloadName as string)}"`,
+    );
+
+    if (contentType) {
+      res.setHeader("Content-Type", contentType as string);
+    }
+
+    stream.pipe(res);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const downloadAllMediaZip = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { eventId } = req.params;
+
+    await mediaService.downloadAllEventMediaZip(eventId, res);
   } catch (error) {
     next(error);
   }

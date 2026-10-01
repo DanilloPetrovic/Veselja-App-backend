@@ -36,3 +36,14 @@ export const uploadToR2 = async (
 
   return `${publicUrl}/${fileName}`;
 };
+
+export const deleteFromR2 = async (fileName: string): Promise<void> => {
+  const bucketName = process.env.R2_BUCKET_NAME;
+
+  const command = new DeleteObjectCommand({
+    Bucket: bucketName,
+    Key: fileName,
+  });
+
+  await r2Client.send(command);
+};

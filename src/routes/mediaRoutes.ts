@@ -3,6 +3,9 @@ import {
   uploadMedia,
   uploadMultipleMedia,
   getEventMedia,
+  deleteMedia,
+  downloadMedia,
+  downloadAllMediaZip,
 } from "../controllers/mediaController";
 import asyncHandler from "../middlewares/asyncHandler";
 import { upload } from "../middlewares/upload";
@@ -18,5 +21,9 @@ router.post(
 );
 
 router.get("/event/:eventId", asyncHandler(getEventMedia));
+router.delete("/:id", asyncHandler(deleteMedia));
+
+router.get("/download", downloadMedia);
+router.get("/download-all/:eventId", downloadAllMediaZip);
 
 export default router;

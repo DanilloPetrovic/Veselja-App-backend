@@ -89,3 +89,17 @@ export const updateEvent = async (req: Request, res: Response) => {
     console.log(error);
   }
 };
+
+export const deleteEvent = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const deletedEvent = await eventService.deleteEvent(id);
+
+    res.status(200).json({
+      message: "Događaj je uspešno obrisan.",
+      event: deletedEvent,
+    });
+  } catch (error) {
+    console.log(error);
+  }
+};

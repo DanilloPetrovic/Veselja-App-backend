@@ -262,3 +262,38 @@ export const updateEvent = async (id: string, data: UpdateEventInput) => {
     );
   }
 };
+
+export const deleteEvent = async (id: string) => {
+  try {
+    if (!id) {
+      throw createHttpError(400, "ID događaja je obavezan.");
+    }
+
+    const existingEvent = await prisma.event.findUnique({
+      where: { id },
+    });
+
+    if (!existingEvent) {
+      throw createHttpError(404, "Događaj nije pronađen.");
+    }
+
+    const deletedEvent = await prisma.event.delete({
+      where: { id },
+    });
+
+    return deletedEvent;
+  } catch (error: any) {
+    if (error.status) {
+      throw error;
+    }
+
+    if (error.code === "P2025") {
+      throw createHttpError(404, "Događaj nije pronađen.");
+    }
+
+    throw createHttpError(
+      500,
+      `Greška pri brisanju događaja: ${error.message}`,
+    );
+  }
+};
