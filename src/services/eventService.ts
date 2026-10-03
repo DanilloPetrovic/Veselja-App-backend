@@ -10,6 +10,7 @@ interface CreateEventInput {
   adminId: string;
   eventDate: string | Date;
   welcomeMessage?: string;
+  fontFamily?: string;
   coverImageFile?: {
     buffer: Buffer;
     originalname: string;
@@ -28,6 +29,7 @@ interface UpdateEventInput {
   slug?: string;
   eventDate?: string | Date;
   welcomeMessage?: string;
+  fontFamily?: string;
   coverImageFile?: {
     buffer: Buffer;
     originalname: string;
@@ -139,6 +141,7 @@ export const createEvent = async (data: CreateEventInput) => {
         pinCode: crypto.randomInt(0, 10000).toString().padStart(4, "0"),
         adminId: data.adminId,
         welcomeMessage: data.welcomeMessage,
+        fontFamily: data.fontFamily || "Tangerine",
         coverImageUrl: coverImageUrl,
         qrCodeUrl: qrCodeUrl,
         eventDate: new Date(data.eventDate),
@@ -211,6 +214,7 @@ export const updateEvent = async (id: string, data: UpdateEventInput) => {
     if (data.title !== undefined) updateData.title = data.title;
     if (data.welcomeMessage !== undefined)
       updateData.welcomeMessage = data.welcomeMessage;
+    if (data.fontFamily !== undefined) updateData.fontFamily = data.fontFamily;
     if (data.eventDate !== undefined)
       updateData.eventDate = new Date(data.eventDate);
 

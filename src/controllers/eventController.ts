@@ -3,7 +3,8 @@ import * as eventService from "../services/eventService";
 
 export const createEvent = async (req: Request, res: Response) => {
   try {
-    const { title, slug, adminId, eventDate, welcomeMessage } = req.body;
+    const { title, slug, adminId, eventDate, welcomeMessage, fontFamily } =
+      req.body;
 
     const coverImageFile = req.file
       ? {
@@ -19,6 +20,7 @@ export const createEvent = async (req: Request, res: Response) => {
       adminId,
       eventDate,
       welcomeMessage,
+      fontFamily,
       coverImageFile,
     });
 
@@ -62,7 +64,7 @@ export const getEventBySlug = async (req: Request, res: Response) => {
 export const updateEvent = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { title, slug, eventDate, welcomeMessage } = req.body;
+    const { title, slug, eventDate, welcomeMessage, fontFamily } = req.body;
 
     const coverImageFile = req.file
       ? {
@@ -77,6 +79,7 @@ export const updateEvent = async (req: Request, res: Response) => {
       slug,
       eventDate,
       welcomeMessage,
+      fontFamily,
       coverImageFile,
     });
 

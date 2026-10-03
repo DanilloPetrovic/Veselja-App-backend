@@ -26,6 +26,7 @@ model Event {
   slug           String   @unique 
   pinCode        String   @map("pin_code")
   welcomeMessage String?  @map("welcome_message")
+  fontFamily     String?  @default("Tangerine") @map("font_family")
   coverImageUrl  String?  @map("cover_image_url")
   coverImageKey String? @map("cover_image_key")
   qrCodeUrl      String?  @map("qr_code_url")
