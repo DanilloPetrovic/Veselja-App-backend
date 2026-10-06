@@ -4,11 +4,11 @@
   "license": "MIT",
   "scripts": {
     "dev": "ts-node-dev src/index.ts",
+    "build": "prisma generate && tsc",
+    "start": "prisma migrate deploy && node dist/index.ts",
     "prisma:migrate": "prisma migrate dev",
     "prisma:generate": "prisma generate",
-    "prisma:seed": "ts-node prisma/seed.ts",
-    "start": "node index.js",
-    "build": "npm install"
+    "prisma:seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1143.0",
