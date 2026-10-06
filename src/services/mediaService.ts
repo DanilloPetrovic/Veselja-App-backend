@@ -4,8 +4,8 @@ import createHttpError from "http-errors";
 import crypto from "crypto";
 import axios from "axios";
 import JSZip from "jszip";
-import { Response } from "express";
 import sharp from "sharp";
+import { Response } from "express";
 
 interface UploadMediaInput {
   eventId: string;
@@ -24,13 +24,15 @@ interface ProcessedImage {
   mimetype: string;
 }
 
-export const processImage = async (buffer: Buffer): Promise<ProcessedImage> => {
+const processGalleryImage = async (buffer: Buffer): Promise<ProcessedImage> => {
   const fullBuffer = await sharp(buffer)
+    .rotate()
     .resize(1920, undefined, { fit: "inside", withoutEnlargement: true })
     .webp({ quality: 80 })
     .toBuffer();
 
   const thumbBuffer = await sharp(buffer)
+    .rotate()
     .resize(400, undefined, { fit: "inside", withoutEnlargement: true })
     .webp({ quality: 70 })
     .toBuffer();
@@ -54,7 +56,7 @@ export const uploadEventMedia = async (input: UploadMediaInput) => {
     const isImage = file.mimetype.startsWith("image/");
 
     if (isImage) {
-      const processed = await processImage(file.buffer);
+      const processed = await processGalleryImage(file.buffer);
       finalBuffer = processed.fullBuffer;
       finalMimeType = processed.mimetype;
       finalExtension = "webp";

@@ -38,11 +38,8 @@ interface UpdateEventInput {
   };
 }
 
-const processCoverImage = async (buffer: Buffer): Promise<Buffer> => {
-  return await sharp(buffer)
-    .resize(1200, undefined, { fit: "inside", withoutEnlargement: true })
-    .webp({ quality: 80 })
-    .toBuffer();
+const fixOrientationOnly = async (buffer: Buffer): Promise<Buffer> => {
+  return await sharp(buffer).rotate().toBuffer();
 };
 
 export const getEvents = async (filters: GetEventsFilters = {}) => {
@@ -132,12 +129,15 @@ export const createEvent = async (data: CreateEventInput) => {
     let coverImageUrl: string | null = null;
 
     if (data.coverImageFile) {
-      const optimizedBuffer = await processCoverImage(
-        data.coverImageFile.buffer,
-      );
-      const fileKey = `covers/${data.slug}-${Date.now()}.webp`;
+      const fixedBuffer = await fixOrientationOnly(data.coverImageFile.buffer);
+      const ext = data.coverImageFile.originalname.split(".").pop() || "jpg";
+      const fileKey = `covers/${data.slug}-${Date.now()}.${ext}`;
 
-      coverImageUrl = await uploadToR2(optimizedBuffer, fileKey, "image/webp");
+      coverImageUrl = await uploadToR2(
+        fixedBuffer,
+        fileKey,
+        data.coverImageFile.mimetype,
+      );
     }
 
     const event = await prisma.event.create({
@@ -234,15 +234,14 @@ export const updateEvent = async (id: string, data: UpdateEventInput) => {
 
     if (data.coverImageFile) {
       const targetSlug = data.slug || existingEvent.slug;
-      const optimizedBuffer = await processCoverImage(
-        data.coverImageFile.buffer,
-      );
-      const fileKey = `covers/${targetSlug}-${Date.now()}.webp`;
+      const fixedBuffer = await fixOrientationOnly(data.coverImageFile.buffer);
+      const ext = data.coverImageFile.originalname.split(".").pop() || "jpg";
+      const fileKey = `covers/${targetSlug}-${Date.now()}.${ext}`;
 
       updateData.coverImageUrl = await uploadToR2(
-        optimizedBuffer,
+        fixedBuffer,
         fileKey,
-        "image/webp",
+        data.coverImageFile.mimetype,
       );
     }
 
