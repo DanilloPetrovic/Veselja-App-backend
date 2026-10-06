@@ -2,6 +2,7 @@ import prisma from "../prisma";
 import createHttpError from "http-errors";
 import crypto from "crypto";
 import QRCode from "qrcode";
+import sharp from "sharp";
 import { uploadToR2 } from "../config/r2";
 
 interface CreateEventInput {
@@ -36,6 +37,13 @@ interface UpdateEventInput {
     mimetype: string;
   };
 }
+
+const processCoverImage = async (buffer: Buffer): Promise<Buffer> => {
+  return await sharp(buffer)
+    .resize(1200, undefined, { fit: "inside", withoutEnlargement: true })
+    .webp({ quality: 80 })
+    .toBuffer();
+};
 
 export const getEvents = async (filters: GetEventsFilters = {}) => {
   try {
@@ -124,14 +132,12 @@ export const createEvent = async (data: CreateEventInput) => {
     let coverImageUrl: string | null = null;
 
     if (data.coverImageFile) {
-      const ext = data.coverImageFile.originalname.split(".").pop() || "jpg";
-      const fileKey = `covers/${data.slug}-${Date.now()}.${ext}`;
-
-      coverImageUrl = await uploadToR2(
+      const optimizedBuffer = await processCoverImage(
         data.coverImageFile.buffer,
-        fileKey,
-        data.coverImageFile.mimetype,
       );
+      const fileKey = `covers/${data.slug}-${Date.now()}.webp`;
+
+      coverImageUrl = await uploadToR2(optimizedBuffer, fileKey, "image/webp");
     }
 
     const event = await prisma.event.create({
@@ -228,13 +234,15 @@ export const updateEvent = async (id: string, data: UpdateEventInput) => {
 
     if (data.coverImageFile) {
       const targetSlug = data.slug || existingEvent.slug;
-      const ext = data.coverImageFile.originalname.split(".").pop() || "jpg";
-      const fileKey = `covers/${targetSlug}-${Date.now()}.${ext}`;
+      const optimizedBuffer = await processCoverImage(
+        data.coverImageFile.buffer,
+      );
+      const fileKey = `covers/${targetSlug}-${Date.now()}.webp`;
 
       updateData.coverImageUrl = await uploadToR2(
-        data.coverImageFile.buffer,
+        optimizedBuffer,
         fileKey,
-        data.coverImageFile.mimetype,
+        "image/webp",
       );
     }
 

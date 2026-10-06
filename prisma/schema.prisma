@@ -47,6 +47,7 @@ model Event {
 model Media {
   id             String  @id @default(uuid())
   fileUrl        String  @map("file_url")
+  thumbnailUrl   String?
   fileKey  String @map("file_key")
   fileType       String  @map("file_type")
   fileSize       Int?    @map("file_size")

@@ -5,6 +5,7 @@ import crypto from "crypto";
 import axios from "axios";
 import JSZip from "jszip";
 import { Response } from "express";
+import sharp from "sharp";
 
 interface UploadMediaInput {
   eventId: string;
@@ -17,17 +18,60 @@ interface UploadMediaInput {
   };
 }
 
+interface ProcessedImage {
+  fullBuffer: Buffer;
+  thumbBuffer: Buffer;
+  mimetype: string;
+}
+
+export const processImage = async (buffer: Buffer): Promise<ProcessedImage> => {
+  const fullBuffer = await sharp(buffer)
+    .resize(1920, undefined, { fit: "inside", withoutEnlargement: true })
+    .webp({ quality: 80 })
+    .toBuffer();
+
+  const thumbBuffer = await sharp(buffer)
+    .resize(400, undefined, { fit: "inside", withoutEnlargement: true })
+    .webp({ quality: 70 })
+    .toBuffer();
+
+  return {
+    fullBuffer,
+    thumbBuffer,
+    mimetype: "image/webp",
+  };
+};
+
 export const uploadEventMedia = async (input: UploadMediaInput) => {
   try {
     const { eventId, guestSessionId, file } = input;
 
-    const fileExtension = file.originalname.split(".").pop();
-    const uniqueFileName = `events/${eventId}/${Date.now()}-${crypto.randomUUID()}.${fileExtension}`;
+    let finalBuffer = file.buffer;
+    let finalMimeType = file.mimetype;
+    let finalExtension = file.originalname.split(".").pop();
+    let thumbnailUrl: string | null = null;
 
+    const isImage = file.mimetype.startsWith("image/");
+
+    if (isImage) {
+      const processed = await processImage(file.buffer);
+      finalBuffer = processed.fullBuffer;
+      finalMimeType = processed.mimetype;
+      finalExtension = "webp";
+
+      const thumbKey = `events/${eventId}/thumbs/${Date.now()}-${crypto.randomUUID()}.webp`;
+      thumbnailUrl = await uploadToR2(
+        processed.thumbBuffer,
+        thumbKey,
+        "image/webp",
+      );
+    }
+
+    const uniqueFileName = `events/${eventId}/${Date.now()}-${crypto.randomUUID()}.${finalExtension}`;
     const fileUrl = await uploadToR2(
-      file.buffer,
+      finalBuffer,
       uniqueFileName,
-      file.mimetype,
+      finalMimeType,
     );
 
     const fileType = file.mimetype.startsWith("video/") ? "VIDEO" : "IMAGE";
@@ -35,10 +79,11 @@ export const uploadEventMedia = async (input: UploadMediaInput) => {
     const media = await prisma.media.create({
       data: {
         fileUrl,
+        thumbnailUrl: thumbnailUrl || fileUrl,
         fileKey: uniqueFileName,
         fileType,
-        fileSize: file.size,
-        mimeType: file.mimetype,
+        fileSize: finalBuffer.length,
+        mimeType: finalMimeType,
         guestSessionId,
         eventId,
       },
