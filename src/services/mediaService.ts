@@ -113,29 +113,38 @@ export const getMediaByEventId = async (eventId: string) => {
   }
 };
 
-export const deleteMedia = async (mediaId: string, guestSessionId: string) => {
+export const deleteMedia = async (
+  mediaId: string,
+  guestSessionId?: string,
+  pinCode?: string,
+) => {
   try {
     if (!mediaId) {
       throw createHttpError(400, "ID medija je obavezan.");
     }
 
-    if (!guestSessionId) {
-      throw createHttpError(400, "Identifikator sesije gosta je obavezan.");
-    }
-
     const media = await prisma.media.findUnique({
       where: { id: mediaId },
+      include: { event: true },
     });
 
     if (!media) {
       throw createHttpError(404, "Medij nije pronađen.");
     }
 
-    if (media.guestSessionId !== guestSessionId) {
-      throw createHttpError(
-        403,
-        "Nemate dozvolu da obrišete ovaj medij jer ga niste vi poslali.",
-      );
+    const isOwner = media.guestSessionId === guestSessionId;
+
+    if (!isOwner) {
+      if (!pinCode) {
+        throw createHttpError(
+          403,
+          "Za brisanje tuđe uspomene neophodno je uneti PIN kod.",
+        );
+      }
+
+      if (media.event?.pinCode !== pinCode) {
+        throw createHttpError(401, "Pogrešan PIN kod događaja.");
+      }
     }
 
     if (media.fileKey) {

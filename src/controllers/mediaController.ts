@@ -124,7 +124,16 @@ export const deleteMedia = async (
       req.body?.guestSessionId ||
       (req.query?.guestSessionId as string);
 
-    const deletedMedia = await mediaService.deleteMedia(id, guestSessionId);
+    const pinCode =
+      (req.headers["x-pin-code"] as string) ||
+      req.body?.pinCode ||
+      (req.query?.pinCode as string);
+
+    const deletedMedia = await mediaService.deleteMedia(
+      id,
+      guestSessionId,
+      pinCode,
+    );
 
     const io = req.app.get("io");
 
